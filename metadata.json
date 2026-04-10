@@ -1,0 +1,5 @@
+{
+  "name": "SKSS music",
+  "description": "A modern, AI-powered music player with local file support, smart recommendations, and Firebase integration.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User ID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Playlist": {
+      "title": "Playlist",
+      "description": "A user's playlist",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner ID" },
+        "name": { "type": "string" },
+        "trackIds": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "trackIds", "createdAt"]
+    },
+    "TrackMetadata": {
+      "title": "TrackMetadata",
+      "description": "Metadata for a local track",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner ID" },
+        "fileHash": { "type": "string", "description": "Hash or unique identifier for the local file" },
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "customImage": { "type": "string", "description": "Base64 or URL of custom image" },
+        "duration": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fileHash", "title", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/playlists/{playlistId}": {
+      "schema": { "$ref": "#/entities/Playlist" },
+      "description": "User playlists"
+    },
+    "/trackMetadata/{trackId}": {
+      "schema": { "$ref": "#/entities/TrackMetadata" },
+      "description": "User track metadata"
+    }
+  }
+}
