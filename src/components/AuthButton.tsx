@@ -13,10 +13,20 @@ export function AuthButton() {
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
+    // Force select account to prevent "autoback" issues with cached sessions
+    provider.setCustomParameters({ prompt: 'select_account' });
+    
     try {
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed", error);
+      if (error.code === 'auth/unauthorized-domain') {
+        alert(`This domain is not authorized in Firebase. Please add your Vercel domain to the "Authorized domains" list in the Firebase Console (Authentication > Settings).`);
+      } else if (error.code === 'auth/popup-blocked') {
+        alert('The login popup was blocked by your browser. Please allow popups for this site.');
+      } else {
+        alert(`Login failed: ${error.message}`);
+      }
     }
   };
 
