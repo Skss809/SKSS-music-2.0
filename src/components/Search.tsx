@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon, Download, Play, Plus, Check, X } from 'lucide-react';
 import { searchAudius } from '../lib/audius';
 import { usePlayerStore, LocalTrack } from '../store/usePlayerStore';
@@ -12,15 +12,27 @@ export function Search() {
   const [playlistModalTrack, setPlaylistModalTrack] = useState<LocalTrack | null>(null);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   
-  const { playTrack, addTracks, tracks, playlists, createPlaylist, addToPlaylist } = usePlayerStore();
+  const { playTrack, addTracks, tracks, playlists, createPlaylist, addToPlaylist, isBuffering, currentTrackIndex, queue } = usePlayerStore();
+  
+  const currentTrack = currentTrackIndex >= 0 ? queue[currentTrackIndex] : null;
 
-  const handleSearch = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (query.trim()) {
+        setIsSearching(true);
+        const fetched = await searchAudius(query);
+        setResults(fetched);
+        setIsSearching(false);
+      } else {
+        setResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [query]);
+
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    setIsSearching(true);
-    const fetched = await searchAudius(query);
-    setResults(fetched);
-    setIsSearching(false);
   };
 
   const handleDownload = async (track: LocalTrack) => {
@@ -80,7 +92,11 @@ export function Search() {
                     onClick={() => playTrack(track)}
                     className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
                   >
-                    <Play size={20} className="fill-white text-white ml-1" />
+                    {isBuffering && currentTrack?.id === track.id ? (
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Play size={20} className="fill-white text-white ml-1" />
+                    )}
                   </button>
                 </div>
                 <div className="min-w-0 pr-4">

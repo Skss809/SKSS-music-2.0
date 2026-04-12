@@ -1,9 +1,13 @@
+let cachedHost: string | null = null;
+
 export async function getAudiusHost() {
+  if (cachedHost) return cachedHost;
   try {
     const res = await fetch('https://api.audius.co');
     const data = await res.json();
     const hosts = data.data;
-    return hosts[Math.floor(Math.random() * hosts.length)];
+    cachedHost = hosts[Math.floor(Math.random() * hosts.length)];
+    return cachedHost || 'https://discoveryprovider.audius.co';
   } catch (e) {
     console.error("Failed to get Audius host", e);
     return 'https://discoveryprovider.audius.co'; // fallback

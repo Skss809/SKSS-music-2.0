@@ -55,7 +55,7 @@ export function Home() {
       {/* AI Recommendations */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4 md:mb-6">
-          <Sparkles className="text-indigo-400" size={20} className="md:w-6 md:h-6" />
+          <Sparkles className="text-indigo-400 md:w-6 md:h-6" size={20} />
           <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">AI Recommended For You</h2>
         </div>
         

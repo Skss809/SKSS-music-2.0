@@ -1,18 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Shuffle, Mic2, ListMusic } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Shuffle, Mic2, ListMusic, Maximize2 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { cn } from '../lib/utils';
+import { FullScreenPlayer } from './FullScreenPlayer';
 
 export function PlayerBar() {
   const { 
     tracks, currentTrackIndex, isPlaying, volume, 
     isShuffle, isRepeat, setIsPlaying, setVolume, 
-    toggleShuffle, toggleRepeat, nextTrack, prevTrack 
+    toggleShuffle, toggleRepeat, nextTrack, prevTrack,
+    setIsExpanded, setProgress: setStoreProgress, setDuration: setStoreDuration,
+    setIsBuffering,
+    progress, duration, seekTo, setSeekTo
   } = usePlayerStore();
   
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
 
   const currentTrack = currentTrackIndex >= 0 ? tracks[currentTrackIndex] : null;
 
@@ -54,10 +56,17 @@ export function PlayerBar() {
     }
   }, [volume]);
 
+  useEffect(() => {
+    if (audioRef.current && seekTo !== null) {
+      audioRef.current.currentTime = seekTo;
+      setSeekTo(null);
+    }
+  }, [seekTo]);
+
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setProgress(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration || 0);
+      setStoreProgress(audioRef.current.currentTime);
+      setStoreDuration(audioRef.current.duration || 0);
     }
   };
 
@@ -65,7 +74,7 @@ export function PlayerBar() {
     const time = Number(e.target.value);
     if (audioRef.current) {
       audioRef.current.currentTime = time;
-      setProgress(time);
+      setStoreProgress(time);
     }
   };
 
@@ -90,6 +99,10 @@ export function PlayerBar() {
         ref={audioRef} 
         onTimeUpdate={handleTimeUpdate}
         onEnded={nextTrack}
+        onWaiting={() => setIsBuffering(true)}
+        onPlaying={() => setIsBuffering(false)}
+        onCanPlay={() => setIsBuffering(false)}
+        preload="auto"
       />
       
       {/* Mobile Progress Bar (Absolute Top) */}
@@ -103,8 +116,11 @@ export function PlayerBar() {
       </div>
 
       {/* Track Info */}
-      <div className="flex items-center gap-3 md:gap-4 w-1/2 md:w-1/4 min-w-0 md:min-w-[180px]">
-        <div className="w-10 h-10 md:w-14 md:h-14 bg-zinc-800 rounded-md overflow-hidden flex-shrink-0">
+      <div 
+        className="flex items-center gap-3 md:gap-4 w-1/2 md:w-1/4 min-w-0 md:min-w-[180px] cursor-pointer group"
+        onClick={() => setIsExpanded(true)}
+      >
+        <div className="w-10 h-10 md:w-14 md:h-14 bg-zinc-800 rounded-md overflow-hidden flex-shrink-0 relative">
           {currentTrack.customImageUrl ? (
             <img src={currentTrack.customImageUrl} alt={currentTrack.title} className="w-full h-full object-cover" />
           ) : (
@@ -112,9 +128,12 @@ export function PlayerBar() {
               <ListMusic size={20} className="md:w-6 md:h-6" />
             </div>
           )}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+            <Maximize2 size={18} className="text-white" />
+          </div>
         </div>
         <div className="overflow-hidden min-w-0">
-          <h4 className="text-white text-sm font-medium truncate">{currentTrack.title}</h4>
+          <h4 className="text-white text-sm font-medium truncate group-hover:underline">{currentTrack.title}</h4>
           <p className="text-zinc-400 text-xs truncate">{currentTrack.artist}</p>
         </div>
       </div>

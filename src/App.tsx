@@ -6,6 +6,7 @@ import { Home } from './components/Home';
 import { Search } from './components/Search';
 import { AuthButton } from './components/AuthButton';
 import { BottomNav } from './components/BottomNav';
+import { FullScreenPlayer } from './components/FullScreenPlayer';
 import { Music2 } from 'lucide-react';
 import { usePlayerStore } from './store/usePlayerStore';
 
@@ -46,6 +47,7 @@ export default function App() {
       
       <PlayerBar />
       <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+      <FullScreenPlayer />
     </div>
   );
 }

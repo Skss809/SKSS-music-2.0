@@ -27,6 +27,10 @@ interface PlayerState {
   isShuffle: boolean;
   isRepeat: boolean;
   playlists: Playlist[];
+  isExpanded: boolean;
+  progress: number;
+  duration: number;
+  isBuffering: boolean;
   
   setTracks: (tracks: LocalTrack[]) => void;
   addTracks: (tracks: LocalTrack[]) => void;
@@ -36,6 +40,12 @@ interface PlayerState {
   setVolume: (volume: number) => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
+  setIsExpanded: (isExpanded: boolean) => void;
+  setProgress: (progress: number) => void;
+  setDuration: (duration: number) => void;
+  setIsBuffering: (isBuffering: boolean) => void;
+  seekTo: number | null;
+  setSeekTo: (time: number | null) => void;
   nextTrack: () => void;
   prevTrack: () => void;
   updateTrackImage: (id: string, imageUrl: string) => void;
@@ -54,6 +64,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isShuffle: false,
   isRepeat: false,
   playlists: [],
+  isExpanded: false,
+  progress: 0,
+  duration: 0,
+  isBuffering: false,
 
   setTracks: (tracks) => set({ tracks, queue: tracks }),
   addTracks: (newTracks) => set((state) => {
@@ -76,6 +90,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setVolume: (volume) => set({ volume }),
   toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
   toggleRepeat: () => set((state) => ({ isRepeat: !state.isRepeat })),
+  setIsExpanded: (isExpanded) => set({ isExpanded }),
+  setProgress: (progress) => set({ progress }),
+  setDuration: (duration) => set({ duration }),
+  setIsBuffering: (isBuffering) => set({ isBuffering }),
+  seekTo: null,
+  setSeekTo: (time) => set({ seekTo: time }),
   
   nextTrack: () => set((state) => {
     if (state.queue.length === 0) return state;
