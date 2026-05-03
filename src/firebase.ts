@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfigJson from '../firebase-applet-config.json';
 
@@ -25,6 +25,11 @@ try {
     app = initializeApp(firebaseConfig);
     db = getFirestore(app, firestoreDatabaseId);
     auth = getAuth(app);
+    
+    // Explicitly set persistence to local to handle mobile/redirect sessions better
+    setPersistence(auth, browserLocalPersistence).catch((err) => {
+      console.error("Failed to set auth persistence:", err);
+    });
   } else {
     console.warn("Firebase config is missing or contains placeholder values. Please check your environment variables or firebase-applet-config.json.");
   }
