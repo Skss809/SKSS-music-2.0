@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { LogIn, LogOut, User } from 'lucide-react';
 
@@ -8,6 +8,23 @@ export function AuthButton() {
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
+    
+    // Handle redirect result for mobile/redirect login flow
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          setUser(result.user);
+        }
+      } catch (error: any) {
+        console.error("Redirect login result failed", error);
+        if (error.message?.includes('missing initial state')) {
+          alert('Authentication error: Missing initial state. This usually happens if third-party cookies are blocked or if you are in Incognito mode.');
+        }
+      }
+    };
+    handleRedirect();
+
     return () => unsubscribe();
   }, []);
 
@@ -16,8 +33,15 @@ export function AuthButton() {
     // Force select account to prevent "autoback" issues with cached sessions
     provider.setCustomParameters({ prompt: 'select_account' });
 
+    // Detect mobile to decide between popup and redirect (WebViews don't support popups well)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
     try {
-      await signInWithPopup(auth, provider);
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        await signInWithPopup(auth, provider);
+      }
     } catch (error: any) {
       console.error("Login failed", error);
       
