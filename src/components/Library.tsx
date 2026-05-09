@@ -5,7 +5,7 @@ import { saveTrackImage, getTrackImage } from '../lib/idb';
 import { generateArtworkPrompt } from '../lib/ai';
 
 export function Library() {
-  const { tracks, addTracks, setCurrentTrackIndex, updateTrackImage } = usePlayerStore();
+  const { tracks, addTracks, setCurrentTrackIndex, updateTrackImage, setTracks } = usePlayerStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
@@ -121,7 +121,10 @@ export function Library() {
                 {/* Play Overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button 
-                    onClick={() => setCurrentTrackIndex(index)}
+                    onClick={() => {
+                      setTracks(tracks);
+                      setCurrentTrackIndex(index);
+                    }}
                     className="w-10 h-10 md:w-12 md:h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform shadow-xl"
                   >
                     <Play size={20} className="md:w-6 md:h-6 ml-1 fill-white" />

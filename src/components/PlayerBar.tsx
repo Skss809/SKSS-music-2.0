@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Shuffle, Mic2, ListMusic, Maximize2 } from 'lucide-react';
+import ReactPlayer from 'react-player';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { cn } from '../lib/utils';
 import { FullScreenPlayer } from './FullScreenPlayer';
 
 export function PlayerBar() {
+  const Player = ReactPlayer as any;
   const { 
-    tracks, currentTrackIndex, isPlaying, volume, 
+    queue, currentTrackIndex, isPlaying, volume, 
     isShuffle, isRepeat, setIsPlaying, setVolume, 
     toggleShuffle, toggleRepeat, nextTrack, prevTrack,
     setIsExpanded, setProgress: setStoreProgress, setDuration: setStoreDuration,
@@ -16,10 +19,12 @@ export function PlayerBar() {
   
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const currentTrack = currentTrackIndex >= 0 ? tracks[currentTrackIndex] : null;
+  const currentTrack = currentTrackIndex >= 0 ? queue[currentTrackIndex] : null;
 
   useEffect(() => {
-    if (audioRef.current && currentTrack) {
+    if (!currentTrack) return;
+    
+    if (!currentTrack.isVideo && audioRef.current) {
       let url = '';
       if (currentTrack.file) {
         url = URL.createObjectURL(currentTrack.file as Blob);
@@ -29,6 +34,7 @@ export function PlayerBar() {
       
       if (url) {
         audioRef.current.src = url;
+        audioRef.current.load(); // Ensure source is loaded
         if (isPlaying) {
           audioRef.current.play().catch(e => console.error("Playback failed:", e));
         }
@@ -37,34 +43,41 @@ export function PlayerBar() {
       return () => {
         if (currentTrack.file && url) URL.revokeObjectURL(url);
       };
+    } else if (currentTrack.isVideo && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = ""; // Clear audio source when video is playing
     }
   }, [currentTrack]);
 
   useEffect(() => {
-    if (audioRef.current) {
+    if (!currentTrack?.isVideo && audioRef.current) {
       if (isPlaying) {
         audioRef.current.play().catch(e => console.error("Playback failed:", e));
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentTrack?.isVideo]);
 
   useEffect(() => {
-    if (audioRef.current) {
+    if (!currentTrack?.isVideo && audioRef.current) {
       audioRef.current.volume = volume;
     }
-  }, [volume]);
+  }, [volume, currentTrack?.isVideo]);
 
   useEffect(() => {
-    if (audioRef.current && seekTo !== null) {
-      audioRef.current.currentTime = seekTo;
+    if (seekTo !== null) {
+      if (currentTrack?.isVideo) {
+        // Skip for video, handled by GlobalPlayer
+      } else if (audioRef.current) {
+        audioRef.current.currentTime = seekTo;
+      }
       setSeekTo(null);
     }
-  }, [seekTo]);
+  }, [seekTo, currentTrack?.isVideo]);
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
+    if (audioRef.current && !currentTrack?.isVideo) {
       setStoreProgress(audioRef.current.currentTime);
       setStoreDuration(audioRef.current.duration || 0);
     }
@@ -72,7 +85,10 @@ export function PlayerBar() {
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = Number(e.target.value);
-    if (audioRef.current) {
+    if (currentTrack?.isVideo) {
+      setSeekTo(time); // Use global seek instead of local ref
+      setStoreProgress(time);
+    } else if (audioRef.current) {
       audioRef.current.currentTime = time;
       setStoreProgress(time);
     }
@@ -120,7 +136,10 @@ export function PlayerBar() {
         className="flex items-center gap-3 md:gap-4 w-1/2 md:w-1/4 min-w-0 md:min-w-[180px] cursor-pointer group"
         onClick={() => setIsExpanded(true)}
       >
-        <div className="w-10 h-10 md:w-14 md:h-14 bg-zinc-800 rounded-md overflow-hidden flex-shrink-0 relative">
+        <motion.div 
+          layoutId="player-art"
+          className="w-10 h-10 md:w-14 md:h-14 bg-zinc-800 rounded-md overflow-hidden flex-shrink-0 relative"
+        >
           {currentTrack.customImageUrl ? (
             <img src={currentTrack.customImageUrl} alt={currentTrack.title} className="w-full h-full object-cover" />
           ) : (
@@ -131,7 +150,7 @@ export function PlayerBar() {
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
             <Maximize2 size={18} className="text-white" />
           </div>
-        </div>
+        </motion.div>
         <div className="overflow-hidden min-w-0">
           <h4 className="text-white text-sm font-medium truncate group-hover:underline">{currentTrack.title}</h4>
           <p className="text-zinc-400 text-xs truncate">{currentTrack.artist}</p>

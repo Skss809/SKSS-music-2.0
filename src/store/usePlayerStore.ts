@@ -76,12 +76,27 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const combined = [...state.tracks, ...uniqueNew];
     return { tracks: combined, queue: combined };
   }),
-  setCurrentTrackIndex: (index) => set({ currentTrackIndex: index, isPlaying: true }),
+  setCurrentTrackIndex: (index) => set((state) => {
+    // If indices are provided for the library but we're playing from queue,
+    // we should ideally ensure they are synced or the caller should know which list they use.
+    // For simplicity, if we set index, we assume we're playing from the current queue.
+    // However, if queue is empty or we're coming from Home (which uses state.tracks),
+    // we should favor state.tracks
+    const useTracks = state.queue.length === 0 || state.tracks.length === state.queue.length;
+    const newQueue = useTracks ? [...state.tracks] : state.queue;
+    
+    return { 
+      queue: newQueue,
+      currentTrackIndex: index, 
+      isPlaying: true 
+    };
+  }),
   playTrack: (track) => set((state) => {
     const existingIndex = state.queue.findIndex(t => t.id === track.id);
     if (existingIndex >= 0) {
       return { currentTrackIndex: existingIndex, isPlaying: true };
     } else {
+      // If not in queue, prepend it
       const newQueue = [track, ...state.queue];
       return { queue: newQueue, currentTrackIndex: 0, isPlaying: true };
     }

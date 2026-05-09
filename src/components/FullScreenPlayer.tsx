@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactPlayer from 'react-player';
 import { 
   ChevronDown, Play, Pause, SkipBack, SkipForward, 
   Shuffle, Repeat, MoreVertical, Cast,
@@ -7,8 +8,10 @@ import {
 } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Slider } from './Slider';
+import { cn } from '../lib/utils';
 
 export function FullScreenPlayer() {
+  const Player = ReactPlayer as any;
   const { 
     queue, 
     currentTrackIndex, 
@@ -25,18 +28,17 @@ export function FullScreenPlayer() {
     progress,
     duration,
     isBuffering,
-    setSeekTo
+    setSeekTo,
+    volume
   } = usePlayerStore();
 
   const [activeTab, setActiveTab] = useState('LYRICS');
   const [mode, setMode] = useState<'song' | 'video'>('song');
 
-  const currentTrack = queue[currentTrackIndex];
-
-  if (!currentTrack) return null;
+  const currentTrack = currentTrackIndex >= 0 ? queue[currentTrackIndex] : null;
 
   const formatTime = (time: number) => {
-    if (isNaN(time)) return "0:00";
+    if (isNaN(time) || time === Infinity) return "0:00";
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -47,25 +49,40 @@ export function FullScreenPlayer() {
   };
 
   const skip10 = (seconds: number) => {
-    const newTime = Math.max(0, Math.min(duration, progress + seconds));
+    const newTime = Math.max(0, Math.min(duration || 0, progress + seconds));
     setSeekTo(newTime);
   };
 
+  // Sync mode with track type
+  React.useEffect(() => {
+    if (currentTrack?.isVideo) {
+      setMode('video');
+    } else {
+      setMode('song');
+    }
+  }, [currentTrack?.id]);
+
   return (
     <AnimatePresence>
-      {isExpanded && (
+      {(isExpanded && currentTrack) && (
         <motion.div
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="fixed inset-0 z-[100] bg-[#1a0505] flex flex-col overflow-hidden text-white h-[100dvh] touch-none"
+          className={cn(
+            "fixed inset-0 z-[105] flex flex-col overflow-hidden text-white h-[100dvh] touch-none transition-colors duration-500",
+            mode === 'video' ? "bg-transparent" : "bg-[#1a0505]"
+          )}
         >
           {/* Background Gradient */}
-          <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#3d0a0a] via-[#1a0505] to-[#000000]" />
+          <div className={cn(
+            "absolute inset-0 z-0 transition-opacity duration-500",
+            mode === 'video' ? "opacity-0" : "opacity-100 bg-gradient-to-b from-[#3d0a0a] via-[#1a0505] to-[#000000]"
+          )} />
           
           {/* Header */}
-          <header className="relative z-10 flex items-center justify-between px-4 pt-6 pb-2">
+          <header className="relative z-20 flex items-center justify-between px-4 pt-6 pb-2">
             <button 
               onClick={() => setIsExpanded(false)}
               className="p-2 hover:bg-white/5 rounded-full transition-colors"
@@ -102,22 +119,28 @@ export function FullScreenPlayer() {
           <div className="relative z-10 flex-1 flex flex-col px-6 pt-2 pb-2 overflow-hidden">
             {/* Cover Art Container */}
             <div className="flex-1 flex items-center justify-center min-h-0 py-2">
-              <div className="w-full aspect-square max-w-[260px] xs:max-w-[300px]">
+              <div className="w-full aspect-video md:aspect-square max-w-[500px]">
                 <motion.div 
                   layoutId="player-art"
-                  className="w-full h-full rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9)]"
+                  className={cn(
+                    "w-full h-full rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9)] flex items-center justify-center transition-colors duration-500",
+                    mode === 'video' ? "bg-transparent shadow-none" : "bg-black"
+                  )}
                 >
-                  {currentTrack.customImageUrl ? (
+                  {mode === 'video' ? null : (currentTrack.customImageUrl ? (
                     <img 
                       src={currentTrack.customImageUrl} 
                       alt={currentTrack.title} 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-                      <Play size={40} className="text-zinc-800 fill-zinc-800" />
+                    <div className="w-full h-full bg-zinc-900 border border-white/5 flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-4 text-zinc-500">
+                        <Play size={64} className="fill-zinc-800 text-zinc-800" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Art Missing</span>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </motion.div>
               </div>
             </div>

@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search as SearchIcon, Download, Play, Plus, Check, X } from 'lucide-react';
+import { Search as SearchIcon, Download, Play, Plus, Check, X, Youtube, Music } from 'lucide-react';
 import { searchAudius } from '../lib/audius';
+import { searchYouTube } from '../lib/youtube';
 import { usePlayerStore, LocalTrack } from '../store/usePlayerStore';
 import { saveTrackToDB } from '../lib/idb';
 
+type SearchSource = 'audius' | 'youtube';
+
 export function Search() {
   const [query, setQuery] = useState('');
+  const [source, setSource] = useState<SearchSource>('audius');
   const [results, setResults] = useState<LocalTrack[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -20,16 +24,21 @@ export function Search() {
     const delayDebounceFn = setTimeout(async () => {
       if (query.trim()) {
         setIsSearching(true);
-        const fetched = await searchAudius(query);
+        let fetched: LocalTrack[] = [];
+        if (source === 'audius') {
+          fetched = await searchAudius(query);
+        } else {
+          fetched = await searchYouTube(query);
+        }
         setResults(fetched);
         setIsSearching(false);
       } else {
         setResults([]);
       }
-    }, 500);
+    }, 600);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [query]);
+  }, [query, source]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +46,14 @@ export function Search() {
 
   const handleDownload = async (track: LocalTrack) => {
     if (!track.streamUrl) return;
+    if (track.isVideo) {
+      // YouTube tracks cannot be "downloaded" easily as blobs in the browser
+      // Just add to library as a streamable link
+      await saveTrackToDB(track);
+      addTracks([track]);
+      return;
+    }
+
     setDownloadingId(track.id);
     try {
       const res = await fetch(track.streamUrl);
@@ -65,6 +82,38 @@ export function Search() {
     <div className="p-4 md:p-8 h-full overflow-y-auto relative">
       <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6">Search & Discover</h2>
       
+      <div className="flex gap-2 mb-6">
+        <button 
+          onClick={() => setSource('audius')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+            source === 'audius' ? 'bg-white text-black border-white' : 'bg-transparent text-zinc-400 border-zinc-800 hover:border-zinc-700'
+          }`}
+        >
+          <Music size={14} />
+          Audius
+        </button>
+        <button 
+          onClick={() => setSource('youtube')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+            source === 'youtube' ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-zinc-400 border-zinc-800 hover:border-zinc-700'
+          }`}
+        >
+          <Youtube size={14} />
+          YouTube
+        </button>
+      </div>
+
+      {source === 'youtube' && !import.meta.env.VITE_YOUTUBE_API_KEY && (
+        <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 text-sm flex items-start gap-4 shadow-lg shadow-orange-500/5">
+          <div className="p-2 bg-orange-500/20 rounded-lg text-lg">💡</div>
+          <div>
+            <p className="font-bold mb-1">YouTube API Key Required</p>
+            <p className="opacity-80">To search YouTube, please go to the Settings (via AI Studio panel) and add the <strong>VITE_YOUTUBE_API_KEY</strong> secret.</p>
+            <p className="text-xs mt-2 opacity-50 italic">Generate one at console.cloud.google.com by enabling "YouTube Data API v3".</p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSearch} className="mb-8 relative">
         <input
           type="text"
