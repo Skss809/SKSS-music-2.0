@@ -103,16 +103,7 @@ export function Search() {
         </button>
       </div>
 
-      {source === 'youtube' && !import.meta.env.VITE_YOUTUBE_API_KEY && (
-        <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 text-sm flex items-start gap-4 shadow-lg shadow-orange-500/5">
-          <div className="p-2 bg-orange-500/20 rounded-lg text-lg">💡</div>
-          <div>
-            <p className="font-bold mb-1">YouTube API Key Required</p>
-            <p className="opacity-80">To search YouTube, please go to the Settings (via AI Studio panel) and add the <strong>VITE_YOUTUBE_API_KEY</strong> secret.</p>
-            <p className="text-xs mt-2 opacity-50 italic">Generate one at console.cloud.google.com by enabling "YouTube Data API v3".</p>
-          </div>
-        </div>
-      )}
+      {/* YouTube API warning removed because we have a fallback key */}
 
       <form onSubmit={handleSearch} className="mb-8 relative">
         <input

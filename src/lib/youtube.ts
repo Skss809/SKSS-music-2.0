@@ -1,6 +1,6 @@
 import { LocalTrack } from '../store/usePlayerStore';
 
-const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || "AIzaSyAAoUmyIgmb_qDueokjd0cnIgQIgPFKgIw";
 
 export async function searchYouTube(query: string): Promise<LocalTrack[]> {
   if (!YOUTUBE_API_KEY) {

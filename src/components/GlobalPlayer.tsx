@@ -30,11 +30,11 @@ export function GlobalPlayer() {
       "fixed pointer-events-none transition-all duration-500 z-[101]",
       isExpanded 
         ? "inset-0 flex items-center justify-center p-6 md:p-12" 
-        : "bottom-4 left-4 w-0 h-0 opacity-0 overflow-hidden"
+        : "top-[-1000px] left-[-1000px] w-[300px] h-[300px] opacity-0 overflow-hidden"
     )}>
       <div className={cn(
-        "relative w-full shadow-2xl transition-all duration-500 bg-black overflow-hidden pointer-events-auto",
-        isExpanded ? "aspect-video md:aspect-square max-w-[500px] rounded-2xl" : "w-0 h-0"
+        "relative w-full shadow-2xl transition-all duration-500 bg-black overflow-hidden",
+        isExpanded ? "aspect-video md:aspect-square max-w-[500px] rounded-2xl pointer-events-auto" : "w-full h-full"
       )}>
         <Player
           ref={playerRef}
@@ -48,9 +48,13 @@ export function GlobalPlayer() {
           onEnded={nextTrack}
           onBuffer={() => setIsBuffering(true)}
           onBufferEnd={() => setIsBuffering(false)}
+          onError={(e: any) => {
+            console.error("YouTube Error:", e);
+            setIsBuffering(false);
+          }}
           config={{
             youtube: {
-              playerVars: { autoplay: 1, rel: 0, modestbranding: 1 }
+              playerVars: { autoplay: 1, rel: 0, modestbranding: 1, origin: window.location.origin }
             }
           }}
         />
