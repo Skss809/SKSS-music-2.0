@@ -10,7 +10,7 @@ export function GlobalPlayer() {
     nextTrack, setIsBuffering,
     setProgress, setDuration,
     seekTo, setSeekTo,
-    isExpanded
+    isExpanded, videoBounds
   } = usePlayerStore();
   
   const playerRef = useRef<any>(null);
@@ -23,16 +23,37 @@ export function GlobalPlayer() {
     }
   }, [seekTo, currentTrack?.isVideo]);
 
+  const lastBounds = useRef<{ top: number, left: number, width: number, height: number } | null>(null);
+  
+  useEffect(() => {
+    if (videoBounds) {
+      lastBounds.current = videoBounds;
+    }
+  }, [videoBounds]);
+
+  const activeBounds = isExpanded ? videoBounds : lastBounds.current;
+  
+  const expandedStyle = (currentTrack?.isVideo && activeBounds) ? {
+    top: activeBounds.top,
+    left: activeBounds.left,
+    width: activeBounds.width,
+    height: activeBounds.height,
+  } : {};
+
   return (
-    <div className={cn(
-      "fixed transition-all duration-500 z-[101]",
-      isExpanded && currentTrack?.isVideo
-        ? "inset-0 flex items-center justify-center p-6 md:p-12 pointer-events-auto" 
-        : "top-[-9999px] left-[-9999px] w-[300px] h-[300px] opacity-0 pointer-events-none"
-    )}>
+    <div 
+      className={cn(
+        "fixed transition-all duration-500 z-[104] pointer-events-none",
+        (!isExpanded || !currentTrack?.isVideo) && "opacity-0"
+      )}
+      style={{
+        ...expandedStyle,
+        ...((!isExpanded || !currentTrack?.isVideo) && !activeBounds ? { top: -9999, left: -9999 } : {})
+      }}
+    >
       <div className={cn(
-        "relative w-[300px] h-[300px] shadow-2xl transition-all duration-500 bg-black overflow-hidden",
-        isExpanded && currentTrack?.isVideo ? "w-full aspect-video md:aspect-square max-w-[500px] h-auto rounded-2xl pointer-events-auto" : "pointer-events-none"
+        "relative w-full h-full bg-black overflow-hidden pointer-events-auto rounded-2xl shadow-2xl",
+        isExpanded && currentTrack?.isVideo ? "opacity-100" : "opacity-0"
       )}>
         {currentTrack?.isVideo && (
           <Player

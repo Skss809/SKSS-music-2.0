@@ -29,11 +29,14 @@ export function FullScreenPlayer() {
     duration,
     isBuffering,
     setSeekTo,
-    volume
+    volume,
+    setVideoBounds
   } = usePlayerStore();
 
   const [activeTab, setActiveTab] = useState('LYRICS');
   const [mode, setMode] = useState<'song' | 'video'>('song');
+  
+  const artRef = React.useRef<HTMLDivElement>(null);
 
   const currentTrack = currentTrackIndex >= 0 ? queue[currentTrackIndex] : null;
 
@@ -61,6 +64,32 @@ export function FullScreenPlayer() {
       setMode('song');
     }
   }, [currentTrack?.id]);
+
+  React.useLayoutEffect(() => {
+    if (!artRef.current) return;
+    
+    const updateBounds = () => {
+      if (artRef.current) {
+        const rect = artRef.current.getBoundingClientRect();
+        setVideoBounds({
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    };
+
+    updateBounds();
+    const observer = new ResizeObserver(updateBounds);
+    observer.observe(artRef.current);
+    window.addEventListener('resize', updateBounds);
+    
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateBounds);
+    };
+  }, [isExpanded, mode]);
 
   return (
     <AnimatePresence>
@@ -119,7 +148,10 @@ export function FullScreenPlayer() {
           <div className="relative z-10 flex-1 flex flex-col px-6 pt-2 pb-2 overflow-hidden">
             {/* Cover Art Container */}
             <div className="flex-1 flex items-center justify-center min-h-0 py-2">
-              <div className="w-full aspect-video md:aspect-square max-w-[500px]">
+              <div 
+                ref={artRef}
+                className="w-full aspect-square max-w-[500px]"
+              >
                 <motion.div 
                   layoutId="player-art"
                   className={cn(

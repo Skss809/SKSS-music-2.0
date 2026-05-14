@@ -31,6 +31,7 @@ interface PlayerState {
   progress: number;
   duration: number;
   isBuffering: boolean;
+  videoBounds: { top: number, left: number, width: number, height: number } | null;
   
   setTracks: (tracks: LocalTrack[]) => void;
   addTracks: (tracks: LocalTrack[]) => void;
@@ -44,6 +45,7 @@ interface PlayerState {
   setProgress: (progress: number) => void;
   setDuration: (duration: number) => void;
   setIsBuffering: (isBuffering: boolean) => void;
+  setVideoBounds: (bounds: { top: number, left: number, width: number, height: number } | null) => void;
   seekTo: number | null;
   setSeekTo: (time: number | null) => void;
   nextTrack: () => void;
@@ -68,6 +70,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   progress: 0,
   duration: 0,
   isBuffering: false,
+  videoBounds: null,
 
   setTracks: (tracks) => set({ tracks, queue: tracks }),
   addTracks: (newTracks) => set((state) => {
@@ -109,6 +112,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setProgress: (progress) => set({ progress }),
   setDuration: (duration) => set({ duration }),
   setIsBuffering: (isBuffering) => set({ isBuffering }),
+  setVideoBounds: (bounds) => set({ videoBounds: bounds }),
   seekTo: null,
   setSeekTo: (time) => set({ seekTo: time }),
   
