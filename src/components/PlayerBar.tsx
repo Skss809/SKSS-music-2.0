@@ -92,6 +92,34 @@ export function PlayerBar() {
     }
   };
 
+  useEffect(() => {
+    if ('mediaSession' in navigator && currentTrack) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentTrack.title,
+        artist: currentTrack.artist || 'Unknown Artist',
+        artwork: currentTrack.customImageUrl ? [
+          { src: currentTrack.customImageUrl, sizes: '512x512' }
+        ] : []
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => setIsPlaying(true));
+      navigator.mediaSession.setActionHandler('pause', () => setIsPlaying(false));
+      navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+      navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== undefined && details.seekTime !== null) {
+          if (currentTrack?.isVideo) {
+            setSeekTo(details.seekTime);
+            setStoreProgress(details.seekTime);
+          } else if (audioRef.current) {
+            audioRef.current.currentTime = details.seekTime;
+            setStoreProgress(details.seekTime);
+          }
+        }
+      });
+    }
+  }, [currentTrack, setIsPlaying, prevTrack, nextTrack]);
+
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
     const mins = Math.floor(time / 60);

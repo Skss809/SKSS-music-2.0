@@ -159,7 +159,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOp
                         step="0.05"
                         value={backgroundOpacity}
                         onChange={(e) => setBackgroundOpacity(parseFloat(e.target.value))}
-                        className="w-full h-1 bg-zinc-800 rounded-lg cursor-pointer accent-white"
+                        className="w-full h-1 bg-zinc-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
                       />
                       <div className="flex items-center justify-between">
                         <div>
@@ -168,9 +168,9 @@ export function SettingsDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOp
                         </div>
                         <button 
                           onClick={() => setBlurBackground(!blurBackground)}
-                          className={`w-10 h-5 rounded-full relative transition-colors ${blurBackground ? 'bg-indigo-600' : 'bg-zinc-700'}`}
+                          className={`w-12 h-6 rounded-full relative transition-colors cursor-pointer touch-manipulation ${blurBackground ? 'bg-indigo-600' : 'bg-zinc-700'}`}
                         >
-                          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${blurBackground ? 'left-6' : 'left-1'}`}></div>
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${blurBackground ? 'left-7' : 'left-1'}`}></div>
                         </button>
                       </div>
                     </div>
