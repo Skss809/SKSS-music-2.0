@@ -7,7 +7,7 @@ import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 
 export function SettingsDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-  const { background, setBackground, backgroundOpacity, setBackgroundOpacity } = useSettingsStore();
+  const { background, setBackground, backgroundOpacity, setBackgroundOpacity, blurBackground, setBlurBackground } = useSettingsStore();
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -147,7 +147,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOp
                   </div>
 
                   {background && (
-                    <div className="space-y-3 pt-2">
+                    <div className="space-y-4 pt-2">
                        <div className="flex justify-between items-center text-xs font-bold text-zinc-500 uppercase">
                         <span>Background Opacity</span>
                         <span className="text-white">{(backgroundOpacity * 100).toFixed(0)}%</span>
@@ -159,8 +159,20 @@ export function SettingsDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOp
                         step="0.05"
                         value={backgroundOpacity}
                         onChange={(e) => setBackgroundOpacity(parseFloat(e.target.value))}
-                        className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                        className="w-full h-1 bg-zinc-800 rounded-lg cursor-pointer accent-white"
                       />
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-white">Blur Background</p>
+                          <p className="text-[10px] text-zinc-500">Apply a frosted glass effect</p>
+                        </div>
+                        <button 
+                          onClick={() => setBlurBackground(!blurBackground)}
+                          className={`w-10 h-5 rounded-full relative transition-colors ${blurBackground ? 'bg-indigo-600' : 'bg-zinc-700'}`}
+                        >
+                          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${blurBackground ? 'left-6' : 'left-1'}`}></div>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </section>

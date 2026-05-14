@@ -5,7 +5,7 @@ import { saveTrackImage, getTrackImage } from '../lib/idb';
 import { generateArtworkPrompt } from '../lib/ai';
 
 export function Library() {
-  const { tracks, addTracks, setCurrentTrackIndex, updateTrackImage, setTracks } = usePlayerStore();
+  const { tracks, addTracks, setCurrentTrackIndex, updateTrackImage, setTracks, setIsPlaying } = usePlayerStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
@@ -124,6 +124,7 @@ export function Library() {
                     onClick={() => {
                       setTracks(tracks);
                       setCurrentTrackIndex(index);
+                      setIsPlaying(true);
                     }}
                     className="w-10 h-10 md:w-12 md:h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform shadow-xl"
                   >

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import ReactPlayer from 'react-player';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { cn } from '../lib/utils';
@@ -31,6 +31,20 @@ export function GlobalPlayer() {
     }
   }, [videoBounds]);
 
+  const [localVideoUrl, setLocalVideoUrl] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (currentTrack?.isVideo && currentTrack.file) {
+      const url = URL.createObjectURL(currentTrack.file as Blob);
+      setLocalVideoUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      setLocalVideoUrl(undefined);
+    }
+  }, [currentTrack]);
+
   const activeBounds = isExpanded ? videoBounds : lastBounds.current;
   
   const expandedStyle = (currentTrack?.isVideo && activeBounds) ? {
@@ -43,7 +57,7 @@ export function GlobalPlayer() {
   return (
     <div 
       className={cn(
-        "fixed transition-all duration-500 z-[104] pointer-events-none",
+        "fixed transition-all duration-500 z-[104]",
         (!isExpanded || !currentTrack?.isVideo) && "opacity-0"
       )}
       style={{
@@ -52,17 +66,18 @@ export function GlobalPlayer() {
       }}
     >
       <div className={cn(
-        "relative w-full h-full bg-black overflow-hidden pointer-events-auto rounded-2xl shadow-2xl",
-        isExpanded && currentTrack?.isVideo ? "opacity-100" : "opacity-0"
+        "relative w-full h-full bg-black overflow-hidden rounded-2xl shadow-2xl transition-all duration-500",
+        isExpanded && currentTrack?.isVideo ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}>
         {currentTrack?.isVideo && (
           <Player
             ref={playerRef}
-            url={currentTrack.streamUrl}
+            url={currentTrack.streamUrl || localVideoUrl}
             playing={isPlaying}
             volume={volume}
-            width="100%"
+            width="177.77%"
             height="100%"
+            style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }}
             onProgress={(state: any) => setProgress(state.playedSeconds)}
             onDuration={(d: number) => setDuration(d)}
             onEnded={nextTrack}

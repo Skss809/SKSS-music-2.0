@@ -18,7 +18,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { loadSavedData } = usePlayerStore();
-  const { background, backgroundOpacity } = useSettingsStore();
+  const { background, backgroundOpacity, blurBackground } = useSettingsStore();
 
   useEffect(() => {
     loadSavedData();
@@ -49,7 +49,7 @@ export default function App() {
           openSettings={() => setIsSettingsOpen(true)}
         />
         
-        <main className="flex-1 flex flex-col relative bg-zinc-900/40 backdrop-blur-sm overflow-hidden md:rounded-tl-2xl md:border-l md:border-t border-zinc-800/50">
+        <main className={`flex-1 flex flex-col relative ${blurBackground ? 'bg-zinc-900/40 backdrop-blur-sm' : 'bg-transparent'} overflow-hidden md:rounded-tl-2xl md:border-l md:border-t border-zinc-800/50`}>
           {/* Top Bar */}
           <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 bg-black/20 backdrop-blur-md z-20">
             <div className="md:hidden flex items-center gap-2 text-white font-bold tracking-tight">

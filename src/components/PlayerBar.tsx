@@ -21,10 +21,15 @@ export function PlayerBar() {
 
   const currentTrack = currentTrackIndex >= 0 ? queue[currentTrackIndex] : null;
 
+  const [audioUrl, setAudioUrl] = useState<string | undefined>();
+
   useEffect(() => {
-    if (!currentTrack) return;
+    if (!currentTrack) {
+      setAudioUrl(undefined);
+      return;
+    }
     
-    if (!currentTrack.isVideo && audioRef.current) {
+    if (!currentTrack.isVideo) {
       let url = '';
       if (currentTrack.file) {
         url = URL.createObjectURL(currentTrack.file as Blob);
@@ -32,20 +37,13 @@ export function PlayerBar() {
         url = currentTrack.streamUrl;
       }
       
-      if (url) {
-        audioRef.current.src = url;
-        audioRef.current.load(); // Ensure source is loaded
-        if (isPlaying) {
-          audioRef.current.play().catch(e => console.error("Playback failed:", e));
-        }
-      }
+      setAudioUrl(url);
       
       return () => {
         if (currentTrack.file && url) URL.revokeObjectURL(url);
       };
-    } else if (currentTrack.isVideo && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = ""; // Clear audio source when video is playing
+    } else {
+      setAudioUrl(undefined);
     }
   }, [currentTrack]);
 
@@ -57,7 +55,7 @@ export function PlayerBar() {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, currentTrack?.isVideo]);
+  }, [isPlaying, audioUrl, currentTrack?.isVideo]);
 
   useEffect(() => {
     if (!currentTrack?.isVideo && audioRef.current) {
@@ -113,6 +111,7 @@ export function PlayerBar() {
     <div className="h-16 md:h-24 bg-zinc-950 border-t border-zinc-900 flex items-center justify-between px-2 md:px-4 z-50 relative">
       <audio 
         ref={audioRef} 
+        src={audioUrl}
         onTimeUpdate={handleTimeUpdate}
         onEnded={nextTrack}
         onWaiting={() => setIsBuffering(true)}
