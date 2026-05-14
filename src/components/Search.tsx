@@ -11,6 +11,7 @@ export function Search() {
   const [query, setQuery] = useState('');
   const [source, setSource] = useState<SearchSource>('audius');
   const [results, setResults] = useState<LocalTrack[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [playlistModalTrack, setPlaylistModalTrack] = useState<LocalTrack | null>(null);
@@ -24,16 +25,26 @@ export function Search() {
     const delayDebounceFn = setTimeout(async () => {
       if (query.trim()) {
         setIsSearching(true);
-        let fetched: LocalTrack[] = [];
-        if (source === 'audius') {
-          fetched = await searchAudius(query);
-        } else {
-          fetched = await searchYouTube(query);
+        setErrorMsg(null);
+        try {
+          let fetched: LocalTrack[] = [];
+          if (source === 'audius') {
+            fetched = await searchAudius(query);
+          } else {
+            fetched = await searchYouTube(query);
+          }
+          setResults(fetched);
+          if (fetched.length === 0) {
+            setErrorMsg("No results found.");
+          }
+        } catch (e: any) {
+          setResults([]);
+          setErrorMsg(e.message || "An error occurred while searching");
         }
-        setResults(fetched);
         setIsSearching(false);
       } else {
         setResults([]);
+        setErrorMsg(null);
       }
     }, 600);
 
@@ -120,6 +131,10 @@ export function Search() {
       {isSearching ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : errorMsg ? (
+        <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
+          <p>{errorMsg}</p>
         </div>
       ) : (
         <div className="space-y-2">

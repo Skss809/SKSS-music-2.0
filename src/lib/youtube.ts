@@ -13,6 +13,10 @@ export async function searchYouTube(query: string): Promise<LocalTrack[]> {
     const response = await fetch(url);
     const data = await response.json();
 
+    if (!response.ok) {
+      throw new Error(data.error?.message || "YouTube API error");
+    }
+
     if (!data.items) return [];
 
     return data.items.map((item: any) => ({
@@ -26,6 +30,6 @@ export async function searchYouTube(query: string): Promise<LocalTrack[]> {
     }));
   } catch (error) {
     console.error("YouTube search error:", error);
-    return [];
+    throw error;
   }
 }
