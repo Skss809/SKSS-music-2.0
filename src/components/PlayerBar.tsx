@@ -43,25 +43,28 @@ export function PlayerBar() {
         if (currentTrack.file && url) URL.revokeObjectURL(url);
       };
     } else {
-      setAudioUrl(undefined);
+      // For video (YouTube), we load a silent audio track. 
+      // This maintains the OS audio focus and keeps the PWA alive in the background
+      // so the YouTube iframe continues playing.
+      setAudioUrl('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
     }
   }, [currentTrack]);
 
   useEffect(() => {
-    if (!currentTrack?.isVideo && audioRef.current) {
+    if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.play().catch(e => console.error("Playback failed:", e));
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, audioUrl, currentTrack?.isVideo]);
+  }, [isPlaying, audioUrl]);
 
   useEffect(() => {
-    if (!currentTrack?.isVideo && audioRef.current) {
+    if (audioRef.current) {
       audioRef.current.volume = volume;
     }
-  }, [volume, currentTrack?.isVideo]);
+  }, [volume]);
 
   useEffect(() => {
     if (seekTo !== null) {
@@ -140,11 +143,20 @@ export function PlayerBar() {
       <audio 
         ref={audioRef} 
         src={audioUrl}
+        loop={currentTrack?.isVideo}
         onTimeUpdate={handleTimeUpdate}
-        onEnded={nextTrack}
-        onWaiting={() => setIsBuffering(true)}
-        onPlaying={() => setIsBuffering(false)}
-        onCanPlay={() => setIsBuffering(false)}
+        onEnded={() => {
+          if (!currentTrack?.isVideo) nextTrack();
+        }}
+        onWaiting={() => {
+          if (!currentTrack?.isVideo) setIsBuffering(true);
+        }}
+        onPlaying={() => {
+          if (!currentTrack?.isVideo) setIsBuffering(false);
+        }}
+        onCanPlay={() => {
+          if (!currentTrack?.isVideo) setIsBuffering(false);
+        }}
         preload="auto"
       />
       

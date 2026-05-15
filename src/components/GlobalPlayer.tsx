@@ -81,6 +81,7 @@ export function GlobalPlayer() {
             onProgress={(state: any) => setProgress(state.playedSeconds)}
             onDuration={(d: number) => setDuration(d)}
             onEnded={nextTrack}
+            playsinline={true}
             onBuffer={() => setIsBuffering(true)}
             onBufferEnd={() => setIsBuffering(false)}
             onError={(e: any) => {
@@ -89,7 +90,7 @@ export function GlobalPlayer() {
             }}
             config={{
               youtube: {
-                playerVars: { autoplay: 1, rel: 0, modestbranding: 1, origin: window.location.origin }
+                playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1, origin: window.location.origin }
               }
             }}
           />
