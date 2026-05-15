@@ -57,13 +57,6 @@ export function Search() {
 
   const handleDownload = async (track: LocalTrack) => {
     if (!track.streamUrl) return;
-    if (track.isVideo) {
-      // YouTube tracks cannot be "downloaded" easily as blobs in the browser
-      // Just add to library as a streamable link
-      await saveTrackToDB(track);
-      addTracks([track]);
-      return;
-    }
 
     setDownloadingId(track.id);
     try {
