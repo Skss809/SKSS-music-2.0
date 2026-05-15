@@ -46,7 +46,7 @@ export function PlayerBar() {
       // For video (YouTube), we load a silent audio track. 
       // This maintains the OS audio focus and keeps the PWA alive in the background
       // so the YouTube iframe continues playing.
-      setAudioUrl('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+      setAudioUrl('https://raw.githubusercontent.com/anars/blank-audio/master/1-second-of-silence.mp3');
     }
   }, [currentTrack]);
 

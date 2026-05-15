@@ -23,6 +23,40 @@ export function GlobalPlayer() {
     }
   }, [seekTo, currentTrack?.isVideo]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isPlaying && playerRef.current && currentTrack?.isVideo) {
+        // Try to force play when going to background
+        const internalPlayer = playerRef.current.getInternalPlayer();
+        if (internalPlayer && typeof internalPlayer.playVideo === 'function') {
+           setTimeout(() => {
+             internalPlayer.playVideo();
+           }, 100);
+        }
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isPlaying, currentTrack?.isVideo]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isPlaying && currentTrack?.isVideo && playerRef.current) {
+      interval = setInterval(() => {
+        if (document.hidden) {
+          const internalPlayer = playerRef.current?.getInternalPlayer();
+          if (internalPlayer && typeof internalPlayer.playVideo === 'function') {
+            internalPlayer.playVideo();
+          }
+        }
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isPlaying, currentTrack?.isVideo]);
+
   const lastBounds = useRef<{ top: number, left: number, width: number, height: number } | null>(null);
   
   useEffect(() => {
@@ -82,6 +116,22 @@ export function GlobalPlayer() {
             onDuration={(d: number) => setDuration(d)}
             onEnded={nextTrack}
             playsinline={true}
+            onPause={() => {
+              // YouTube iframe pauses itself when going to background on mobile.
+              // Try to force play if store says we should be playing.
+              if (isPlaying && playerRef.current) {
+                const internalPlayer = playerRef.current.getInternalPlayer();
+                if (internalPlayer && typeof internalPlayer.playVideo === 'function') {
+                  internalPlayer.playVideo();
+                }
+              }
+            }}
+            onPlay={() => {
+              if (window.navigator.mediaSession && currentTrack) {
+                // Re-assert media session in case YouTube iframe stole it
+                window.navigator.mediaSession.playbackState = 'playing';
+              }
+            }}
             onBuffer={() => setIsBuffering(true)}
             onBufferEnd={() => setIsBuffering(false)}
             onError={(e: any) => {
