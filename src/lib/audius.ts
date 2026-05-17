@@ -28,7 +28,8 @@ export async function searchAudius(query: string) {
       duration: track.duration,
       customImageUrl: track.artwork?.['480x480'] || track.artwork?.['150x150'],
       streamUrl: `${host}/v1/tracks/${track.id}/stream?app_name=SKSS_Music`,
-      isVideo: false
+      isVideo: false,
+      source: 'audius'
     }));
   } catch (e) {
     console.error("Audius search failed", e);

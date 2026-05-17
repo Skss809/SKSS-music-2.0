@@ -36,9 +36,24 @@
         "artist": { "type": "string" },
         "customImage": { "type": "string", "description": "Base64 or URL of custom image" },
         "duration": { "type": "number" },
+        "source": { "type": "string", "enum": ["youtube", "audius", "local"] },
+        "streamUrl": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "fileHash", "title", "createdAt"]
+    },
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "User specific application settings like wallpapers",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "background": { "type": "string" },
+        "backgroundOpacity": { "type": "number" },
+        "blurBackground": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "updatedAt"]
     }
   },
   "firestore": {
@@ -53,6 +68,10 @@
     "/trackMetadata/{trackId}": {
       "schema": { "$ref": "#/entities/TrackMetadata" },
       "description": "User track metadata"
+    },
+    "/userSettings/{userId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "User settings like background"
     }
   }
 }

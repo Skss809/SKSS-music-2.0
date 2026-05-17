@@ -10,6 +10,7 @@ export interface LocalTrack {
   duration: number;
   customImageUrl?: string;
   isVideo: boolean;
+  source?: 'youtube' | 'audius' | 'local';
 }
 
 export interface Playlist {
@@ -77,6 +78,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const existingIds = new Set(state.tracks.map(t => t.id));
     const uniqueNew = newTracks.filter(t => !existingIds.has(t.id));
     const combined = [...state.tracks, ...uniqueNew];
+    
+    // Sync to firebase in background
+    if (uniqueNew.length > 0) {
+      import('../lib/sync').then(({ syncLibraryToFirebase }) => {
+        syncLibraryToFirebase(uniqueNew).catch(console.error);
+      });
+    }
+    
     return { tracks: combined, queue: combined };
   }),
   setCurrentTrackIndex: (index) => set((state) => {
@@ -142,17 +151,29 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     queue: state.queue.map(t => t.id === id ? { ...t, customImageUrl: imageUrl } : t)
   })),
 
-  createPlaylist: (name) => set((state) => ({
-    playlists: [...state.playlists, { id: Date.now().toString(), name, trackIds: [] }]
-  })),
-
-  addToPlaylist: (playlistId, trackId) => set((state) => ({
-    playlists: state.playlists.map(p => 
+  createPlaylist: (name) => set((state) => {
+    const newPlaylist = { id: Date.now().toString(), name, trackIds: [] };
+    const combined = [...state.playlists, newPlaylist];
+    import('../firebase').then(({ auth }) => {
+      if (auth.currentUser) {
+        import('../lib/sync').then(({ syncPlaylistsToFirebase }) => syncPlaylistsToFirebase(combined));
+      }
+    });
+    return { playlists: combined };
+  }),
+  addToPlaylist: (playlistId, trackId) => set((state) => {
+    const combined = state.playlists.map(p => 
       p.id === playlistId && !p.trackIds.includes(trackId)
         ? { ...p, trackIds: [...p.trackIds, trackId] }
         : p
-    )
-  })),
+    );
+    import('../firebase').then(({ auth }) => {
+      if (auth.currentUser) {
+        import('../lib/sync').then(({ syncPlaylistsToFirebase }) => syncPlaylistsToFirebase(combined));
+      }
+    });
+    return { playlists: combined };
+  }),
 
   loadSavedData: async () => {
     try {

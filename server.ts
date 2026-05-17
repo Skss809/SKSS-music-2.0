@@ -1,6 +1,6 @@
 import express from "express";
 import path from "path";
-import ytdl from "@distube/ytdl-core";
+import youtubedl from "youtube-dl-exec";
 import { createServer as createViteServer } from "vite";
 import cors from "cors";
 
@@ -19,32 +19,25 @@ async function startServer() {
       }
 
       const url = `https://www.youtube.com/watch?v=${videoId}`;
-      const info = await ytdl.getInfo(url);
-      
-      // Select the best audio format
-      const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'highestaudio', filter: 'audioonly' });
+      console.log('youtubedl stream url:', url);
 
-      if (!audioFormat) {
-        return res.status(404).json({ error: "No audio stream found" });
-      }
-
-      // Set headers for streaming audio
-      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Type', 'audio/mp4'); // Usually m4a
       res.setHeader('Transfer-Encoding', 'chunked');
-      
-      const stream = ytdl(url, { format: audioFormat });
-      
-      stream.pipe(res);
-      
-      stream.on('error', (err) => {
-        console.error("Stream error:", err);
-        if (!res.headersSent) {
-          res.status(500).end();
-        }
+
+      const subprocess = youtubedl.exec(url, {
+        o: '-',
+        f: 'bestaudio[ext=m4a]/bestaudio',
+        q: true,
       });
-      
+
+      subprocess.stdout?.pipe(res);
+
+      subprocess.stderr?.on('data', (data) => {
+         console.error('yt-dlp stderr:', data.toString());
+      });
+
       req.on('close', () => {
-        stream.destroy();
+        subprocess.kill();
       });
 
     } catch (err: any) {

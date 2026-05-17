@@ -38,14 +38,20 @@ export function Library() {
           console.error("Error reading from IDB", err);
         }
 
-        newTracks.push({
+        const trackObj: LocalTrack = {
           id,
           file,
           title,
           artist: "Unknown Artist",
-          duration: 0, // We'll update this when it plays or via a background worker
+          duration: 0,
           customImageUrl,
           isVideo
+        };
+        newTracks.push(trackObj);
+        
+        // Save to internal storage & IDB for persistence
+        import('../lib/storage').then(({ saveAudioToInternalStorage }) => {
+          saveAudioToInternalStorage(trackObj, file).catch(console.error);
         });
       }
     }

@@ -26,7 +26,8 @@ export async function searchYouTube(query: string): Promise<LocalTrack[]> {
       duration: 0, // YouTube search doesn't return duration, would need another call
       customImageUrl: item.snippet.thumbnails.high.url,
       streamUrl: `/api/yt-audio?v=${item.id.videoId}`,
-      isVideo: false
+      isVideo: false,
+      source: 'youtube'
     }));
   } catch (error) {
     console.error("YouTube search error:", error);

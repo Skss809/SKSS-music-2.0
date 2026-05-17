@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { auth } from './firebase';
+import { loadLibraryFromFirebase } from './lib/sync';
 import { Sidebar } from './components/Sidebar';
 import { PlayerBar } from './components/PlayerBar';
 import { Library } from './components/Library';
@@ -17,12 +20,54 @@ import { GlobalPlayer } from './components/GlobalPlayer';
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { loadSavedData } = usePlayerStore();
+  const { loadSavedData, addTracks } = usePlayerStore();
   const { background, backgroundOpacity, blurBackground } = useSettingsStore();
 
   useEffect(() => {
     loadSavedData();
-  }, [loadSavedData]);
+    
+    // Auth Listener for Firebase track syncing
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const remoteTracks = await loadLibraryFromFirebase();
+          if (remoteTracks && remoteTracks.length > 0) {
+            addTracks(remoteTracks);
+          }
+          
+          const { loadPlaylistsFromFirebase } = await import('./lib/sync');
+          const remotePlaylists = await loadPlaylistsFromFirebase();
+          if (remotePlaylists && remotePlaylists.length > 0) {
+            usePlayerStore.setState({ playlists: remotePlaylists });
+          }
+          
+          const { loadSettingsFromFirebase } = await import('./lib/sync');
+          const settings = await loadSettingsFromFirebase();
+          if (settings) {
+            const { setBackground, setBackgroundOpacity, setBlurBackground } = useSettingsStore.getState();
+            if (settings.background !== undefined) setBackground(settings.background);
+            if (settings.backgroundOpacity !== undefined) setBackgroundOpacity(settings.backgroundOpacity);
+            if (settings.blurBackground !== undefined) setBlurBackground(settings.blurBackground);
+          }
+        } catch(e) {
+          console.error("Failed to fetch remote tracks", e);
+        }
+      }
+    });
+
+    // Removed BackgroundMode since it causes crashes on modern Android without permissions
+    
+    return () => unsubscribe();
+  }, [loadSavedData, addTracks]);
+
+  useEffect(() => {
+    // Only try to sync if auth.currentUser exists and settings loaded
+    if (auth.currentUser) {
+       import('./lib/sync').then(({ syncSettingsToFirebase }) => {
+         syncSettingsToFirebase({ background, backgroundOpacity, blurBackground });
+       });
+    }
+  }, [background, backgroundOpacity, blurBackground]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-black text-white overflow-hidden font-sans selection:bg-indigo-500/30 relative">

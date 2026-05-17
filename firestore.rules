@@ -93,14 +93,25 @@ service cloud.firestore {
     }
 
     function isValidTrackMetadata(data) {
-      return hasOnlyAllowedFields(['userId', 'fileHash', 'title', 'artist', 'customImage', 'duration', 'createdAt']) &&
+      return hasOnlyAllowedFields(['userId', 'fileHash', 'title', 'artist', 'customImage', 'duration', 'source', 'streamUrl', 'createdAt']) &&
              data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
              data.fileHash is string && data.fileHash.size() > 0 && data.fileHash.size() < 256 &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
-             (!('artist' in data) || (data.artist is string && data.artist.size() < 200)) &&
-             (!('customImage' in data) || (data.customImage is string && data.customImage.size() < 1048576)) && // 1MB max for base64
-             (!('duration' in data) || (data.duration is number && data.duration >= 0)) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 512 &&
+             (!('artist' in data) || (data.artist is string && data.artist.size() < 512)) &&
+             (!('customImage' in data) || (data.customImage is string && data.customImage.size() < 1048576)) &&
+             (!('duration' in data) || (data.duration is number)) &&
+             (!('source' in data) || (data.source in ['youtube', 'audius', 'local'])) &&
+             (!('streamUrl' in data) || data.streamUrl == null || (data.streamUrl is string && data.streamUrl.size() < 2048)) &&
              data.createdAt is string && isValidDateString(data.createdAt);
+    }
+
+    function isValidUserSettings(data) {
+      return hasOnlyAllowedFields(['userId', 'background', 'backgroundOpacity', 'blurBackground', 'updatedAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
+             (!('background' in data) || (data.background is string && data.background.size() < 1048576)) &&
+             (!('backgroundOpacity' in data) || (data.backgroundOpacity is number && data.backgroundOpacity >= 0 && data.backgroundOpacity <= 1)) &&
+             (!('blurBackground' in data) || data.blurBackground is bool) &&
+             data.updatedAt is string && isValidDateString(data.updatedAt);
     }
 
     // ===============================================================
@@ -119,25 +130,34 @@ service cloud.firestore {
     }
 
     match /playlists/{playlistId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidPlaylist(request.resource.data) && 
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && isValidPlaylist(request.resource.data) && 
                     request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && isValidPlaylist(request.resource.data) && 
+      allow update: if request.auth != null && isValidPlaylist(request.resource.data) && 
                     resource.data.userId == request.auth.uid &&
                     request.resource.data.userId == resource.data.userId &&
                     request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     match /trackMetadata/{trackId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && isValidTrackMetadata(request.resource.data) && 
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && isValidTrackMetadata(request.resource.data) && 
                     request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && isValidTrackMetadata(request.resource.data) && 
+      allow update: if request.auth != null && isValidTrackMetadata(request.resource.data) && 
                     resource.data.userId == request.auth.uid &&
                     request.resource.data.userId == resource.data.userId &&
                     request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    match /userSettings/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUserSettings(request.resource.data) && 
+                    request.resource.data.userId == userId && isOwner(userId);
+      allow update: if isAuthenticated() && isValidUserSettings(request.resource.data) && 
+                    request.resource.data.userId == resource.data.userId && isOwner(userId);
+      allow delete: if isOwner(userId) || isAdmin();
     }
   }
 }
