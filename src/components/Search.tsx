@@ -14,7 +14,6 @@ export function Search() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [downloadStats, setDownloadStats] = useState<Record<string, {loaded: number, total: number}>>({});
   const [playlistModalTrack, setPlaylistModalTrack] = useState<LocalTrack | null>(null);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   
@@ -60,41 +59,14 @@ export function Search() {
     if (!track.streamUrl) return;
 
     setDownloadingId(track.id);
-    setDownloadStats(prev => ({...prev, [track.id]: {loaded: 0, total: 0}}));
     try {
       const res = await fetch(track.streamUrl);
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error: ${res.status}`);
+        const errorData = await res.text().catch(() => '');
+        throw new Error(`Server error: ${res.status} ${errorData}`);
       }
 
-      if (!res.body) {
-        const blob = await res.blob();
-        if (blob.size < 100) {
-           throw new Error("Downloaded file is too small or invalid.");
-        }
-        const { saveAudioToInternalStorage } = await import('../lib/storage');
-        const savedTrack = await saveAudioToInternalStorage(track, blob);
-        addTracks([savedTrack]);
-        setDownloadingId(null);
-        return;
-      }
-      
-      const contentLength = res.headers.get('content-length');
-      const total = parseInt(contentLength || '0', 10);
-      let loaded = 0;
-      
-      const reader = res.body.getReader();
-      const chunks = [];
-      while(true) {
-        const {done, value} = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        loaded += value.length;
-        setDownloadStats(prev => ({...prev, [track.id]: {loaded, total}}));
-      }
-      
-      const blob = new Blob(chunks);
+      const blob = await res.blob();
       if (blob.size < 100) {
           throw new Error("Downloaded file is too small or invalid.");
       }
@@ -102,16 +74,11 @@ export function Search() {
       const savedTrack = await saveAudioToInternalStorage(track, blob);
       
       addTracks([savedTrack]);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Download failed", e);
-      alert('Failed to download track.');
+      alert('Failed to download track. ' + (e.message || e));
     }
     setDownloadingId(null);
-    setDownloadStats(prev => {
-        const newStats = {...prev};
-        delete newStats[track.id];
-        return newStats;
-    });
   };
 
   const handleCreatePlaylist = () => {
@@ -215,14 +182,7 @@ export function Search() {
                     title="Download & Add to Library"
                   >
                     {downloadingId === track.id ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
-                        {downloadStats[track.id] && (
-                          <span className="text-[10px] font-mono w-14 text-right">
-                            {(downloadStats[track.id].loaded / (1024 * 1024)).toFixed(1)} MB
-                          </span>
-                        )}
-                      </div>
+                      <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       <Download size={20} />
                     )}
