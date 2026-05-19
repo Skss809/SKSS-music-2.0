@@ -19,13 +19,17 @@ export async function searchYouTube(query: string): Promise<LocalTrack[]> {
 
     if (!data.items) return [];
 
+    const baseUrl = window.location.origin.includes('localhost') || window.location.protocol === 'capacitor:' 
+      ? 'https://ais-pre-tn4pxmdr4icvzdpqtd7ohb-550584511807.asia-southeast1.run.app' 
+      : window.location.origin;
+
     return data.items.map((item: any) => ({
       id: item.id.videoId,
       title: item.snippet.title,
       artist: item.snippet.channelTitle,
       duration: 0, // YouTube search doesn't return duration, would need another call
       customImageUrl: item.snippet.thumbnails.high.url,
-      streamUrl: `/api/yt-audio?v=${item.id.videoId}`,
+      streamUrl: `${baseUrl}/api/yt-audio?v=${item.id.videoId}`,
       isVideo: false,
       source: 'youtube'
     }));

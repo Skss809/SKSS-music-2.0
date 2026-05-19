@@ -131,7 +131,10 @@ export const loadLibraryFromFirebase = async (): Promise<LocalTrack[]> => {
       let streamUrl = data.streamUrl;
       
       if (source === 'youtube') {
-        streamUrl = `/api/yt-audio?v=${data.fileHash}`;
+        const baseUrl = window.location.origin.includes('localhost') || window.location.protocol === 'capacitor:' 
+          ? 'https://ais-pre-tn4pxmdr4icvzdpqtd7ohb-550584511807.asia-southeast1.run.app' 
+          : window.location.origin;
+        streamUrl = `${baseUrl}/api/yt-audio?v=${data.fileHash}`;
       }
 
       fetchedTracks.push({
